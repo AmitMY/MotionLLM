@@ -1,19 +1,14 @@
-import os
 import sys
 import time
 import warnings
 from pathlib import Path
 from typing import Optional
-from typing import Dict, List, Literal, Optional, Tuple
 from lit_gpt.lora import GPT, Block, Config, lora_filter, mark_only_lora_as_trainable
 
 import lightning as L
 import torch
-import numpy as np
 import torch.nn as nn
-import torch.nn.functional as F
 
-import models.vqvae as vqvae
 from generate import generate
 from lit_llama import Tokenizer, LLaMA, LLaMAConfig
 from lit_llama.lora import lora
@@ -21,14 +16,10 @@ from lit_llama.utils import EmptyInitOnDevice
 from lit_gpt.utils import lazy_load
 from scripts.video_dataset.prepare_video_dataset_video_llava import generate_prompt_mlp
 from options import option
-import imageio
-from tqdm import tqdm
 from models.multimodal_encoder.builder import build_image_tower, build_video_tower
 from models.multimodal_projector.builder import build_vision_projector
 
 warnings.filterwarnings('ignore')
-
-args = option.get_args_parser()
 
 
 class LlavaMetaModel:
@@ -192,6 +183,7 @@ class ProjectionNN(nn.Module):
 
 
 def load_model(
+    args: any,
     quantize: Optional[str] = None,
     dtype: str = "float32",
     accelerator: str = "auto",
@@ -330,8 +322,10 @@ def predict(tokenizer: Tokenizer,
     return outputfull.split("ASSISTANT:")[-1].strip()
 
 def main():
+    args = option.get_args_parser()
+
     torch.set_float32_matmul_precision("high")
-    model_components = load_model()
+    model_components = load_model(args)
     while True:
         input_video_path = input("\033[0;34;40m Input video path: \033[0m")
         prompt = input("\033[0;34;40m Your question: \033[0m")
